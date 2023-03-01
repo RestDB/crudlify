@@ -1,5 +1,5 @@
-# crudlify
-Create automatic CRUD API's and database persistence for any data-schema
+# Crudlify
+Create automatic REST CRUD API from any data-schema. Database support for mongodDB and Codehooks.io.
 
 ## Install
 
@@ -32,7 +32,9 @@ crudlify(app, {user: userSchemaYup}, options)
 export default app.init();
 ```
 
-Deploy to codehooks.io with `coho deploy index.js`. Alternatively run and mangage it yourself, shown below.
+Deploy to codehooks.io with `coho deploy index.js`. 
+
+Alternatively run and mangage it yourself, shown below.
 
 ## Run standalone express server and mongoDB
 

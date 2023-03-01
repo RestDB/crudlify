@@ -1,16 +1,16 @@
-import q2m from 'query-to-mongo';
 import Debug from "debug";
-import {validate as validateYup, cast as castYup} from './lib/schema/yup/index.js'
-import {validate as validateJSON, cast as castJSON} from './lib/schema/json-schema/index.js'
 import Ajv from 'ajv';
 const ajv = new Ajv({useDefaults: true});
 const debug = Debug("crudlify");
 
+// module variables
 let Datastore = null;
 let _schema = {};
 let _opt = {};
-let _validate = validateYup;
-let _cast = castYup;
+let _validate = null;
+let _cast = null;
+let _query = null;
+
 
 /**
  * 
@@ -18,10 +18,11 @@ let _cast = castYup;
  * @param {object} schema - Yup schema object
  * @param {object} options - Options
  */
-export default function crudlify(app, schema = {}, options = { schema: "yup" }) {
+export default async function crudlify(app, schema = {}, options = { schema: "yup", query: "q2m" }) {
     _schema = schema;
     _opt = options;
     try {
+        // the DB variable is present when running as a codehooks.io app
         Datastore = DB;
     } catch (error) {
         debug("Standalone mode:", error.message)
@@ -34,21 +35,21 @@ export default function crudlify(app, schema = {}, options = { schema: "yup" }) 
     } catch (error) {
         debug(error)
     }
+    // load query language
+    _query = await import(`./lib/query/${options.query || 'q2m'}/index.js`);
+    debug('Query lang', _query)
 
     // prep json-schema
-    
+    _validate = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).validate;
+    _cast = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).cast;
     if (options.schema === 'json-schema' && _schema) {
-        debug("JSON-schema", _schema)
-        _validate = validateJSON;
-        _cast = castJSON;
         for (const [key, value] of Object.entries(_schema)) {
-            debug(`Schema ajv ${key}: ${value}`);
             if (value !== null) {
                 _schema[key] = {validate: ajv.compile(value)};
             }
           }    
-          debug("JSON-schema 2", _schema)    
     }
+
     // App API routes
     app.post('/:collection', createFunc);
     app.get('/:collection', readManyFunc);
@@ -72,7 +73,6 @@ async function createFunc(req, res) {
     if (_schema[collection] !== undefined) {
         
         if (_schema[collection] !== null) {
-            debug('val func', validateYup)
             _validate(_schema[collection], document)
             //_schema[collection].validate(document)
                 .then(async function (value) {
@@ -108,25 +108,15 @@ async function createFunc(req, res) {
 async function readManyFunc(req, res) {
     
     const { collection } = req.params;
-    const mongoQuery = q2m(req.query);    
     if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
         return res.status(404).send(`No collection ${collection}`)
     }
-    const conn = await Datastore.open();
-    const options = {
-        filter: mongoQuery.criteria
-    }
-    if (mongoQuery.options.fields) {
-        options.hints = { $fields: mongoQuery.options.fields }
-    }
-    if (mongoQuery.options.limit) {
-        options.limit = mongoQuery.options.limit
-    }
-    if (mongoQuery.options.skip) {
-        options.offset = mongoQuery.options.skip
-    }
+
+    const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
     
-    (await conn.getMany(collection, options)).json(res);
+    const conn = await Datastore.open();
+    
+    (await conn.getMany(collection, mongoQuery)).json(res);
 }
 
 async function readOneFunc(req, res) {
@@ -148,7 +138,11 @@ async function readOneFunc(req, res) {
 
 async function updateFunc(req, res) {
     const { collection, ID } = req.params;
+    
     try {
+        if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+            return res.status(404).send(`No collection ${collection}`)
+        }
         const document = req.body;
         const conn = await Datastore.open();
         const result = await conn.replaceOne(collection, ID, document, {});
@@ -163,6 +157,9 @@ async function updateFunc(req, res) {
 async function patchFunc(req, res) {
     const { collection, ID } = req.params;
     try {
+        if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+            return res.status(404).send(`No collection ${collection}`)
+        }
         const document = req.body;
         const conn = await Datastore.open();
         const result = await conn.updateOne(collection, ID, document, {});
@@ -176,14 +173,15 @@ async function patchFunc(req, res) {
 
 async function patchManyFunc(req, res) {
     const { collection } = req.params;
-    const mongoQuery = q2m(req.query);    
-    const options = {
-        filter: mongoQuery.criteria
+    if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+        return res.status(404).send(`No collection ${collection}`)
     }
+    
     try {
+        const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
         const document = req.body;
         const conn = await Datastore.open();
-        const result = await conn.updateMany(collection, document, options);
+        const result = await conn.updateMany(collection, document, mongoQuery);
         res.json(result);
     } catch (e) {
         res
@@ -194,6 +192,9 @@ async function patchManyFunc(req, res) {
 
 async function deleteFunc(req, res) {
     const { collection, ID } = req.params;
+    if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+        return res.status(404).send(`No collection ${collection}`)
+    }
     try {
         const conn = await Datastore.open();
         const result = await conn.removeOne(collection, ID, {});
@@ -207,13 +208,14 @@ async function deleteFunc(req, res) {
 
 async function deleteManyFunc(req, res) {
     const { collection } = req.params;
-    const mongoQuery = q2m(req.query);    
-    const options = {
-        filter: mongoQuery.criteria
+    if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+        return res.status(404).send(`No collection ${collection}`)
     }
+    
     try {        
+        const mongoQuery = _query.getMongoQuery(req.query, req.headers);
         const conn = await Datastore.open();
-        const result = await conn.removeMany(collection, options);
+        const result = await conn.removeMany(collection, mongoQuery);
         res.json(result);
     } catch (e) {
         res
