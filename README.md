@@ -71,6 +71,16 @@ GET PUT POST PATCH DELETE
 
 ## Event hooks middleware
 
+Events can be called before and after a database operation.
+
+```js
+hooks.before<VERB>(<COLLECTION>, callbackFunction)
+
+hooks.after<VERB>(<COLLECTION>, callbackFunction)
+```
+
+Example hooks.
+
 ```js
 const options = {
     schema: "json-schema"
