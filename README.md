@@ -1,5 +1,6 @@
 # Crudlify
-Create automatic REST CRUD API from any data-schema. Database support for mongodDB and Codehooks.io.
+
+Database CRUD automation for node.js.
 
 ## Install
 
@@ -22,9 +23,10 @@ const userSchemaYup = object({
 });
 
 const options = {
-    // schema: "yup" or "json-schema"
-    // format: "standard" or "foo"
-    // query: "query-to-mongo" or "mongo"
+    // schema: "yup" || "json-schema"
+    // format: "standard" || "foo"
+    // query: "query-to-mongo" || "mongo"
+    // database: "mongodb" || "dynamodb"
 }
 
 crudlify(app, {user: userSchemaYup}, options)

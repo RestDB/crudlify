@@ -1,10 +1,10 @@
 {
   "name": "crudlify",
   "version": "1.0.0",
-  "description": "Create automatic CRUD API's and database persistence for any data-schema",
+  "description": "Database CRUD automation for node.js",
   "main": "index.js",
   "type": "module",
-  "license": "AGPL-version-3.0",
+  "license": "MIT",
   "private": false,
   "engines": {
     "node": ">= 14.0.0",
