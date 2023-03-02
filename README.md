@@ -1,10 +1,10 @@
-# Crudlify
+# Codehooks-crudlify
 
 Database CRUD automation for node.js.
 
 ## Install
 
-`npm install crudlify`
+`npm install codehooks-crudlify`
 
 ## Usage
 
@@ -12,7 +12,7 @@ Database CRUD automation for node.js.
 // index.js
 import app from 'codehooks-js';
 import { object, string, number, date } from 'yup';
-import crudlify from 'crudlify';
+import crudlify from 'codehooks-crudlify';
 
 const userSchemaYup = object({
     name: string().required(),
@@ -41,6 +41,7 @@ Alternatively run and mangage it yourself, shown below.
 ## Run standalone express server and mongoDB
 
 Create a separate `standalone.js` file to provide a runtime for the `index.js` app.
+
 ```js
 // standalone.js
 import coho from './index.js';
@@ -67,11 +68,11 @@ app.listen(3000, () => {
 
 Start the server with `node standalone.js`
 
-## Auto REST API
+## Automatic database REST APIs
 
 GET PUT POST PATCH DELETE
 
-## Event hooks middleware
+## Database event hooks middleware
 
 Events can be called before and after a database operation.
 
@@ -81,31 +82,39 @@ hooks.before<VERB>(<COLLECTION>, callbackFunction)
 hooks.after<VERB>(<COLLECTION>, callbackFunction)
 ```
 
-Example hooks.
+Example event hooks is shown below.
 
 ```js
+...
 const options = {
     schema: "json-schema"
 }
 
 const hooks = await crudlify(app, { user: userSchemaJSON }, options);
 
-hooks.beforePOST('user', (data) => {
-    console.log("Pre insert user", data)
-    //throw new Error(`BAAD post for ${data}`)
+hooks
+.beforePOST('user', (data) => {
+    console.log("Pre insert user before saving", data)
+
+    // abort operation with a throw, cases 404 status code
+    // E.g. throw new Error(`BAAD post for ${data}`)
+
+    // mutate data before saved to the database
     data.foo = 'Was here!'
-}).afterPOST('user', (data) => {
-    console.log("Post insert user", data)
 })
+.afterPOST('user', (data) => {
+    console.log("Post insert user after saved to the database", data)
+})
+...
 ```
 
 ## Options
 
-* Schema: Yup or JSON.schema
+* Schema: yup or json.schema. Default yup.
 * Format: Standard JSON array or ?
-* Query: URL query to mongo or JSON mongo
+* Query: URL query to mongo (q2m) or JSON mongo. Default q2m
 
-Crudlify can be used in many combos
+Crudlify can be used in many scenarios.
 
 ## App servers
 * Express
@@ -119,7 +128,7 @@ Crudlify can be used in many combos
 * Yup
 * JSON-schema
 
-## Data formats
+## JSON data formats
 * React admin
 * Appgyver
 * MOI apps
