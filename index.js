@@ -1,7 +1,8 @@
 import Debug from "debug";
-import Ajv from 'ajv';
-const ajv = new Ajv({useDefaults: true});
+import { EventHooks } from "./lib/eventhooks.js";
+
 const debug = Debug("crudlify");
+
 
 // module variables
 let Datastore = null;
@@ -9,7 +10,9 @@ let _schema = {};
 let _opt = {};
 let _validate = null;
 let _cast = null;
+let _prepare = null;
 let _query = null;
+let _eventHooks = null;
 
 
 /**
@@ -17,6 +20,7 @@ let _query = null;
  * @param {object} app - Codehooks app ( npm package codehooks-js)
  * @param {object} schema - Yup schema object
  * @param {object} options - Options
+ * @returns {EventHooks} Hooks for REST operations
  */
 export default async function crudlify(app, schema = {}, options = { schema: "yup", query: "q2m" }) {
     _schema = schema;
@@ -39,16 +43,11 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     _query = await import(`./lib/query/${options.query || 'q2m'}/index.js`);
     debug('Query lang', _query)
 
-    // prep json-schema
+    // dynamic schema import
     _validate = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).validate;
     _cast = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).cast;
-    if (options.schema === 'json-schema' && _schema) {
-        for (const [key, value] of Object.entries(_schema)) {
-            if (value !== null) {
-                _schema[key] = {validate: ajv.compile(value)};
-            }
-          }    
-    }
+    _prepare = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).prepare;
+    _schema = _prepare(_schema);
 
     // App API routes
     app.post('/:collection', createFunc);
@@ -59,9 +58,12 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     app.patch('/:collection/:ID', patchFunc);
     app.delete('/:collection/_byquery', deleteManyFunc);
     app.delete('/:collection/:ID', deleteFunc);
-    
+    _eventHooks = new EventHooks();
+    return _eventHooks;
 }
 
+
+// override ther Datastore class
 const setDatastore = function(ds) {
     Datastore = ds;
 }
@@ -74,17 +76,17 @@ async function createFunc(req, res) {
         
         if (_schema[collection] !== null) {
             _validate(_schema[collection], document)
-            //_schema[collection].validate(document)
                 .then(async function (value) {
                     document = _cast(_schema[collection], value)
-                    //document = _schema[collection].cast(value)
                     debug('cast', document)
+                    _eventHooks.fireBefore(collection, 'POST', document);
                     const result = await conn.insertOne(collection, document);
+                    _eventHooks.fireAfter(collection, 'POST', result);
                     res.json(result);
                 })
                 .catch(function (err) {
-                    console.log(document, err)
-                    res.status(400).json(err);
+                    console.error(err, document)
+                    res.status(400).json(err.message);
                 });
         } else {
             // insert with collection name but no schema            
@@ -116,7 +118,7 @@ async function readManyFunc(req, res) {
     
     const conn = await Datastore.open();
     
-    (await conn.getMany(collection, mongoQuery)).json(res);
+    return (await conn.getMany(collection, mongoQuery)).json(res);
 }
 
 async function readOneFunc(req, res) {
@@ -145,7 +147,9 @@ async function updateFunc(req, res) {
         }
         const document = req.body;
         const conn = await Datastore.open();
+        _eventHooks.fireBefore(collection, 'PUT', document);
         const result = await conn.replaceOne(collection, ID, document, {});
+        _eventHooks.fireAfter(collection, 'PUT', result);
         res.json(result);
     } catch (e) {
         res
@@ -162,7 +166,9 @@ async function patchFunc(req, res) {
         }
         const document = req.body;
         const conn = await Datastore.open();
+        _eventHooks.fireBefore(collection, 'PATCH', document);
         const result = await conn.updateOne(collection, ID, document, {});
+        _eventHooks.fireAfter(collection, 'PATCH', document);
         res.json(result);
     } catch (e) {
         res
@@ -181,7 +187,9 @@ async function patchManyFunc(req, res) {
         const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
         const document = req.body;
         const conn = await Datastore.open();
+        _eventHooks.fireBefore(collection, 'PATCH', document);
         const result = await conn.updateMany(collection, document, mongoQuery);
+        _eventHooks.fireAfter(collection, 'PATCH', result);
         res.json(result);
     } catch (e) {
         res
@@ -197,7 +205,9 @@ async function deleteFunc(req, res) {
     }
     try {
         const conn = await Datastore.open();
+        _eventHooks.fireBefore(collection, 'DELETE', document);
         const result = await conn.removeOne(collection, ID, {});
+        _eventHooks.fireAfter(collection, 'DELETE', result);
         res.json(result);
     } catch (e) {
         res

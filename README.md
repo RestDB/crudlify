@@ -72,8 +72,18 @@ GET PUT POST PATCH DELETE
 ## Event hooks middleware
 
 ```js
-crudlify.collection('user').on('POST', (data) => {
-    data.foo = 'Was here'
+const options = {
+    schema: "json-schema"
+}
+
+const hooks = await crudlify(app, { user: userSchemaJSON }, options);
+
+hooks.beforePOST('user', (data) => {
+    console.log("Pre insert user", data)
+    //throw new Error(`BAAD post for ${data}`)
+    data.foo = 'Was here!'
+}).afterPOST('user', (data) => {
+    console.log("Post insert user", data)
 })
 ```
 
