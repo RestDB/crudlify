@@ -29,12 +29,14 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
         // the DB variable is present when running as a codehooks.io app
         Datastore = DB;
     } catch (error) {
-        debug("Standalone mode:", error.message)
+        if (error instanceof ReferenceError) {
+            debug("Standalone mode:", error.message)
+        }
     }
     try {
         app.addListener((updatedApp) => {
             Datastore = updatedApp.getDatastore();
-            debug('Updated app', Datastore)
+            debug('Updated app Datastore', Datastore)
         })
     } catch (error) {
         debug(error)
