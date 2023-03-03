@@ -4,6 +4,12 @@ Easy database REST API CRUD automation for Node.js. Use this open source package
 
 ## Install
 
+Create a new directory for your project. Then initialize with npm.
+
+`npm init es5``
+
+Install dependent packages.
+
 `npm install codehooks-crudlify codehooks-js`
 
 ## Usage
