@@ -1,6 +1,6 @@
 {
   "name": "codehooks-crudlify",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Database CRUD automation for Node.js",
   "main": "index.js",
   "type": "module",
@@ -16,7 +16,16 @@
     "url": "https://github.com/RestDB/crudlify"
   },
   "bugs": "",
-  "keywords": ["crud", "mongodb", "serverless", "yup", "codehooks", "express", "rest", "api"],
+  "keywords": [
+    "crud",
+    "mongodb",
+    "serverless",
+    "yup",
+    "codehooks",
+    "express",
+    "rest",
+    "api"
+  ],
   "author": {
     "name": "codehooks-official",
     "email": "contact@codehooks.io",
