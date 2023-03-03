@@ -81,9 +81,9 @@ async function createFunc(req, res) {
                 .then(async function (value) {
                     document = _cast(_schema[collection], value)
                     debug('cast', document)
-                    _eventHooks.fireBefore(collection, 'POST', document);
+                    await _eventHooks.fireBefore(collection, 'POST', document);
                     const result = await conn.insertOne(collection, document);
-                    _eventHooks.fireAfter(collection, 'POST', result);
+                    await _eventHooks.fireAfter(collection, 'POST', result);
                     res.json(result);
                 })
                 .catch(function (err) {
@@ -149,9 +149,9 @@ async function updateFunc(req, res) {
         }
         const document = req.body;
         const conn = await Datastore.open();
-        _eventHooks.fireBefore(collection, 'PUT', document);
+        await _eventHooks.fireBefore(collection, 'PUT', document);
         const result = await conn.replaceOne(collection, ID, document, {});
-        _eventHooks.fireAfter(collection, 'PUT', result);
+        await _eventHooks.fireAfter(collection, 'PUT', result);
         res.json(result);
     } catch (e) {
         res
@@ -168,9 +168,9 @@ async function patchFunc(req, res) {
         }
         const document = req.body;
         const conn = await Datastore.open();
-        _eventHooks.fireBefore(collection, 'PATCH', document);
+        await _eventHooks.fireBefore(collection, 'PATCH', document);
         const result = await conn.updateOne(collection, ID, document, {});
-        _eventHooks.fireAfter(collection, 'PATCH', document);
+        await _eventHooks.fireAfter(collection, 'PATCH', document);
         res.json(result);
     } catch (e) {
         res
@@ -189,9 +189,9 @@ async function patchManyFunc(req, res) {
         const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
         const document = req.body;
         const conn = await Datastore.open();
-        _eventHooks.fireBefore(collection, 'PATCH', document);
+        await _eventHooks.fireBefore(collection, 'PATCH', document);
         const result = await conn.updateMany(collection, document, mongoQuery);
-        _eventHooks.fireAfter(collection, 'PATCH', result);
+        await _eventHooks.fireAfter(collection, 'PATCH', result);
         res.json(result);
     } catch (e) {
         res
@@ -207,9 +207,9 @@ async function deleteFunc(req, res) {
     }
     try {
         const conn = await Datastore.open();
-        _eventHooks.fireBefore(collection, 'DELETE', document);
+        await _eventHooks.fireBefore(collection, 'DELETE', document);
         const result = await conn.removeOne(collection, ID, {});
-        _eventHooks.fireAfter(collection, 'DELETE', result);
+        await _eventHooks.fireAfter(collection, 'DELETE', result);
         res.json(result);
     } catch (e) {
         res
