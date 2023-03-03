@@ -46,7 +46,7 @@ Alternatively run and mangage it yourself, this is shown in the next section.
 
 ## Run application with express server and mongoDB
 
-In case you wish to develop and host the application yourself, you can, follow the recipie below. 
+In case you wish to develop and host the application yourself, just follow the recipie explained in this section. 
 
 The trick is to create a separate file, e.g. `standalone.js`. The code in this file will provide a separate runtime server, of your control, for the app shown above (the `index.js` file).
 
