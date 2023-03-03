@@ -200,7 +200,7 @@ async function patchManyFunc(req, res) {
     }
     
     try {
-        const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
+        const mongoQuery = _query(req.query, req.headers);    
         const document = req.body;
         const conn = await Datastore.open();
         await _eventHooks.fireBefore(collection, 'PATCH', document);
@@ -240,7 +240,7 @@ async function deleteManyFunc(req, res) {
     }
     
     try {        
-        const mongoQuery = _query.getMongoQuery(req.query, req.headers);
+        const mongoQuery = _query(req.query, req.headers);
         const conn = await Datastore.open();
         const result = await conn.removeMany(collection, mongoQuery);
         res.json(result);
