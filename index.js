@@ -1,5 +1,8 @@
 import Debug from "debug";
 import { EventHooks } from "./lib/eventhooks.js";
+import {getMongoQuery as _queryQ2M} from "./lib/query/q2m/index.js";
+import {validate as _validateYup, cast as _castYup, prepare as _prepareYup} from "./lib/schema/yup/index.js";
+import {validate as _validateJSON, cast as _castJSON, prepare as _prepareJSON} from "./lib/schema/json-schema/index.js";
 
 const debug = Debug("crudlify");
 
@@ -42,15 +45,25 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
         debug(error)
     }
     // load query language
-    _query = await import(`./lib/query/${options.query || 'q2m'}/index.js`);
+    _query = _queryQ2M;
+
     debug('Query lang', _query)
 
-    // dynamic schema import
-    _validate = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).validate;
-    _cast = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).cast;
-    _prepare = (await import(`./lib/schema/${options.schema || 'yup'}/index.js`)).prepare;
+    // load schema validators
+    debug('load validators')
+    _validate = _validateYup;
+    _cast = _castYup;
+    _prepare = _prepareYup;
+    if (new String(options.schema).toLowerCase() === 'json-schema') {
+        _validate = _validateJSON;
+        _cast = _castJSON;
+        _prepare = _prepareJSON;
+    }
+    
+    // prep schemas
     _schema = _prepare(_schema);
 
+    debug('Apply routes to app');
     // App API routes
     app.post('/:collection', createFunc);
     app.get('/:collection', readManyFunc);
@@ -61,6 +74,7 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     app.delete('/:collection/_byquery', deleteManyFunc);
     app.delete('/:collection/:ID', deleteFunc);
     _eventHooks = new EventHooks();
+    debug('Return event hooks');
     return _eventHooks;
 }
 
@@ -116,7 +130,7 @@ async function readManyFunc(req, res) {
         return res.status(404).send(`No collection ${collection}`)
     }
 
-    const mongoQuery = _query.getMongoQuery(req.query, req.headers);    
+    const mongoQuery = _query(req.query, req.headers);    
     
     const conn = await Datastore.open();
     
@@ -156,7 +170,7 @@ async function updateFunc(req, res) {
     } catch (e) {
         res
             .status(404) // not found
-            .end(e);
+            .end(e.message);
     }
 }
 
@@ -175,7 +189,7 @@ async function patchFunc(req, res) {
     } catch (e) {
         res
             .status(404) // not found
-            .end(e);
+            .end(e.message);
     }
 }
 
@@ -196,7 +210,7 @@ async function patchManyFunc(req, res) {
     } catch (e) {
         res
             .status(404) // not found
-            .end(e);
+            .end(e.message);
     }
 }
 
@@ -207,14 +221,15 @@ async function deleteFunc(req, res) {
     }
     try {
         const conn = await Datastore.open();
-        await _eventHooks.fireBefore(collection, 'DELETE', document);
+        await _eventHooks.fireBefore(collection, 'DELETE', ID);
         const result = await conn.removeOne(collection, ID, {});
         await _eventHooks.fireAfter(collection, 'DELETE', result);
+        debug('Delete result', result)
         res.json(result);
     } catch (e) {
         res
             .status(404) // not found
-            .end(e);
+            .end(e.message);
     }
 }
 
@@ -232,7 +247,7 @@ async function deleteManyFunc(req, res) {
     } catch (e) {
         res
             .status(404) // not found
-            .end(e);
+            .end(e.message);
     }
 }
 
