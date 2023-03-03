@@ -138,7 +138,7 @@ async function readManyFunc(req, res) {
 }
 
 async function readOneFunc(req, res) {
-    console.log("crudlify read one")
+    debug("crudlify read one")
     const { collection, ID } = req.params;
     const conn = await Datastore.open();
     try {
