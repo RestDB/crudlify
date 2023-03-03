@@ -46,11 +46,11 @@ Alternatively run and mangage it yourself, this is shown in the next section.
 
 ## Run application with express server and mongoDB
 
-In case you wish to develop an perhaps host the application yourself, you can. 
+In case you wish to develop and host the application yourself, you can, follow the recipie below. 
 
 The trick is to create a separate file, e.g. `standalone.js`. The code in this file will provide a separate runtime server, of your control, for the app shown above (the `index.js` file).
 
-Install the [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) and the other necessary packages to support Express and mongoDB.
+Install the [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) and the other necessary packages to support Express and mongoDB. Also make sure thah your app is set up to use the required JavaScript ES6, either by running `npm init es6` or by adding `"type": "module"` in the `package.json` file.
 
 `npm install codehooks-mongo express body-parser`
 
