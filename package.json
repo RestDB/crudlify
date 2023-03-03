@@ -13,10 +13,10 @@
   "homepage": "",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/RestDB/crudlify"
   },
   "bugs": "",
-  "keywords": [],
+  "keywords": ["crud", "mongodb", "serverless", "yup", "codehooks", "express", "rest", "api"],
   "author": {
     "name": "codehooks-official",
     "email": "contact@codehooks.io",
