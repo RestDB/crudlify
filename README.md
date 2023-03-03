@@ -219,21 +219,21 @@ const options = {
     schema: "json-schema"
 }
 
-const hooks = await crudlify(app, { user: userSchemaJSON }, options);
+crudlify(app, {user: userSchemaYup}, options).then((hooks) => {
 
-hooks
-.beforePOST('user', async (data) => {
-    console.log("User data before saving", data)
+  hooks.beforePOST('user', async (data) => {
+      console.log("User data before saving", data)
 
-    // abort operation with a throw, cases 404 status code
-    // E.g. throw new Error(`BAAD post for ${data}`)
+      // abort operation with a throw, cases 404 status code
+      // E.g. throw new Error(`BAAD post for ${data}`)
 
-    // mutate data before saved to the database
-    data.foo = 'Was here!'
-})
-.afterPOST('user', async (data) => {
-    console.log("User data after saved to the database", data)
-})
+      // mutate data before saved to the database
+      data.foo = 'Was here!'
+  })
+  hooks.afterPOST('user', async (data) => {
+      console.log("User data after saved to the database", data)
+  })
+
 ...
 ```
 
@@ -268,3 +268,4 @@ Deploy with `coho deploy` or to Express locally like shown in the examples above
 * [App events](https://codehooks.io/docs/appeventapi)
 * [Queue workers](https://codehooks.io/docs/queuehooks)
 * [CRON job workers](https://codehooks.io/docs/jobhooks)
+* [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) 
