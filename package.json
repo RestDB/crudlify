@@ -22,6 +22,10 @@
     "email": "contact@codehooks.io",
     "url": "https://codehooks.io"
   },
+  "files": [
+    "index.js",
+    "npm-shrinkwrap.json"
+  ],
   "contributors": [],
   "scripts": {
     "dev": "",

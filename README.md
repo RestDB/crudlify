@@ -1,6 +1,6 @@
 # Codehooks-crudlify
 
-Database REST API CRUD automation for node.js. Use this open source package for easy creation of REST APIs and persistent storage for backend applications. This package is compatible with [Express](https://www.npmjs.com/package/express), [mongodDB](https://www.npmjs.com/package/mongodb) and [Codehooks.io](https://codehooks.io).
+Easy database REST API CRUD automation for Node.js. Use this open source package for easy creation of REST APIs and persistent storage for backend applications. This package requires use of [codehooks-js](https://www.npmjs.com/package/codehooks-js) together with a codehooks.io backend or using Express/MongoDB with the open source [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) library.
 
 ## Install
 
@@ -8,7 +8,7 @@ Database REST API CRUD automation for node.js. Use this open source package for 
 
 ## Usage
 
-Create a standard node.js Codehooks backend app like the example shown below.
+Create a Node.js Codehooks backend app like the example shown below.
 
 ```js
 // index.js
@@ -36,21 +36,21 @@ crudlify(app, {user: userSchemaYup}, options)
 export default app.init(); // export app to a runtime server engine
 ```
 
-## Deploy application to the codehooks.io cloud app service
+## Deploy application to the codehooks.io cloud service
 
 Using the [Codehooks CLI](https://www.npmjs.com/package/codehooks) you can deploy the app to with the `coho deploy` command.
 
 > Tip: Inspect the app output using the `coho logs -f` command. 
 
-Alternatively run and mangage it yourself, this is shown in the next section.
+Alternatively run and manage it yourself, this is shown in the next section.
 
-## Run application with express server and mongoDB
+## Run application with Express server and MongoDB
 
-In case you wish to develop and host the application yourself, just follow the recipie explained in this section. 
+In case you wish to develop and host the application yourself, just follow the recipe explained in this section. 
 
-The trick is to create a separate file, e.g. `standalone.js`. The code in this file will provide a separate runtime server, of your control, for the app shown above (the `index.js` file).
+You need to add one extra file, e.g. `standalone.js`. The code in this file will provide a separate runtime server for the app shown above (the `index.js` file).
 
-Install the [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) and the other necessary packages to support Express and mongoDB. Also make sure thah your app is set up to use the required JavaScript ES6, either by running `npm init es6` or by adding `"type": "module"` in the `package.json` file.
+Install the [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) and the other necessary packages to support Express and MongoDB. Also make sure that your app is set up to use the required JavaScript ES6, either by running `npm init es6` or by adding `"type": "module"` in the `package.json` file.
 
 `npm install codehooks-mongo express body-parser`
 
@@ -163,7 +163,7 @@ Validation error shows that Yup works.
 }
 ```
 
-### Run a query agains the database
+### Run a query against the database
 
 ```bash
 curl -X GET \
@@ -200,9 +200,9 @@ curl -X PATCH \
 To provide additional CRUD logic, events are triggered before and after a database operation.
 
 ```js
-hooks.before<VERB>(<COLLECTION>, callbackFunction)
+hooks.before<VERB>(<COLLECTION>, handlerFunction)
 
-hooks.after<VERB>(<COLLECTION>, callbackFunction)
+hooks.after<VERB>(<COLLECTION>, handlerFunction)
 ```
 
 Example event hooks is shown in the code example below.
@@ -216,7 +216,7 @@ const options = {
 const hooks = await crudlify(app, { user: userSchemaJSON }, options);
 
 hooks
-.beforePOST('user', (data) => {
+.beforePOST('user', async (data) => {
     console.log("User data before saving", data)
 
     // abort operation with a throw, cases 404 status code
@@ -225,7 +225,7 @@ hooks
     // mutate data before saved to the database
     data.foo = 'Was here!'
 })
-.afterPOST('user', (data) => {
+.afterPOST('user', async (data) => {
     console.log("User data after saved to the database", data)
 })
 ...
@@ -242,7 +242,7 @@ crudlify(app, {user: userSchemaJSON}, {schema: "json-schema"})
 
 ## Quick start
 
-For a quick start you can create a app without any schema or validation. This effectively gives you a CRUD REST API for any collection. The example below shows an bare bone example backend application.
+For a quick start you can create an app without any schema or validation. This effectively gives you a CRUD REST API for any collection. The example below shows a bare bone example backend application.
 
 ```js
 // index.js
