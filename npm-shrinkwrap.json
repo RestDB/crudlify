@@ -1,20 +1,12 @@
 {
   "name": "codehooks-crudlify",
-<<<<<<< HEAD
-  "version": "1.0.0",
-=======
   "version": "1.0.1",
->>>>>>> cbcf0cd5cff89ca693c05102e99c8fdeb4e85872
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "codehooks-crudlify",
-<<<<<<< HEAD
-      "version": "1.0.0",
-=======
       "version": "1.0.1",
->>>>>>> cbcf0cd5cff89ca693c05102e99c8fdeb4e85872
       "license": "MIT",
       "dependencies": {
         "ajv": "^8.12.0",
