@@ -1,12 +1,14 @@
 # Codehooks-crudlify
 
-Database CRUD automation for node.js.
+Database REST API CRUD automation for node.js. Use this open source package for easy creation of REST APIs and persistent storage for backend applications. This package is compatible with [Express](https://www.npmjs.com/package/express), [mongodDB](https://www.npmjs.com/package/mongodb) and [Codehooks.io](https://codehooks.io).
 
 ## Install
 
-`npm install codehooks-crudlify`
+`npm install codehooks-crudlify codehooks-js`
 
 ## Usage
+
+Create a standard node.js Codehooks backend app like the example shown below.
 
 ```js
 // index.js
@@ -14,6 +16,7 @@ import app from 'codehooks-js';
 import { object, string, number, date } from 'yup';
 import crudlify from 'codehooks-crudlify';
 
+// database schema
 const userSchemaYup = object({
     name: string().required(),
     age: number().required().positive().integer(),
@@ -23,58 +26,178 @@ const userSchemaYup = object({
 });
 
 const options = {
-    // schema: "yup" || "json-schema"
-    // format: "standard" || "foo"
-    // query: "query-to-mongo" || "mongo"
-    // database: "mongodb" || "dynamodb"
+    // schema: "yup" (default)
+    // schema: "json-schema"
 }
 
+// Make REST API CRUD operations for user collection with Yup schema
 crudlify(app, {user: userSchemaYup}, options)
 
-export default app.init();
+export default app.init(); // export app to a runtime server engine
 ```
 
-Deploy to codehooks.io with `coho deploy index.js`. 
+## Deploy application to the codehooks.io cloud app service
 
-Alternatively run and mangage it yourself, shown below.
+Using the [Codehooks CLI](https://www.npmjs.com/package/codehooks) you can deploy the app to with the `coho deploy` command.
 
-## Run standalone express server and mongoDB
+> Tip: Inspect the app output using the `coho logs -f` command. 
 
-Create a separate `standalone.js` file to provide a runtime for the `index.js` app.
+Alternatively run and mangage it yourself, this is shown in the next section.
+
+## Run application with express server and mongoDB
+
+In case you wish to develop an perhaps host the application yourself, you can. 
+
+The trick is to create a separate file, e.g. `standalone.js`. The code in this file will provide a separate runtime server, of your control, for the app shown above (the `index.js` file).
+
+Install the [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) and the other necessary packages to support Express and mongoDB.
+
+`npm install codehooks-mongo express body-parser`
 
 ```js
 // standalone.js
-import coho from './index.js';
+import coho from './index.js'; // import the codehooks app scope
 import mongoStore from 'codehooks-mongodb';
 import express from 'express';
 import bodyParser from 'body-parser';
 const app = express();
-import Debug from "debug";
-const debug = Debug("codehooks-standalone");
 
+// add any necessary express configuration you like
 app.use(bodyParser.json({ limit: '10mb' }));
 
 const options = {
-    "datastore": new mongoStore('mongodb://localhost:27017')
+    // replace this with the mondoDB connection string you like
+    "datastore": new mongoStore('mongodb://localhost:27017') 
 }
 
-// important, make codehooks use express and MongoDB
+// Important, make codehooks use express and MongoDB
 coho.app.useExpress(app, options);
 
+// Start the server
 app.listen(3000, () => {
     console.log("Running standalone on port 3000")
 })
 ```
 
-Start the server with `node standalone.js`
+Start the server with `node standalone.js` and you should see this message in the console.
 
-## Automatic database REST APIs
+```bash
+$ node standalone.js
 
-GET PUT POST PATCH DELETE
+Running standalone on port 3000
+```
+
+## Automatic REST API
+By using the `crudlify(app, schema)` function, your Codehooks.io app effectively gets a complete HTTP CRUD  REST API with schema validation and data persistence for your application collections.
+
+Crudlify will create the following REST API endpoints for any collection defined in your schema:
+
+| Verb  | Codehooks.io route  | Description  |
+|:---|---|---|
+| `GET`  | https://{TENANT-ID}/{SPACE}/:collection  | Retrieve all objects (filtered by query)  |
+| `GET`  | https://{TENANT-ID}/{SPACE}/:collection/:ID  | Retrieve object by ID  |
+| `POST` | https://{TENANT-ID}/{SPACE}/:collection  | Add object  | 
+| `PUT`  | https://{TENANT-ID}/{SPACE}/:collection/:ID  | Replace object by ID  | 
+| `PATCH`  | https://{TENANT-ID}/{SPACE}/:collection/:ID  | Update object by ID  | 
+| `PATCH`  | https://{TENANT-ID}/{SPACE}/:collection/_byquery  | Update object(s) by query  | 
+|`DELETE`| https://{TENANT-ID}/{SPACE}/:collection/:ID  | Delete object by ID  | 
+|`DELETE`| https://{TENANT-ID}/{SPACE}/:collection/_byquery  | Delete object(s) by query  | 
+
+`TENANT-ID` and `SPACE` for a Codehooks app is represented with the application endpoint URL. 
+
+For example:
+
+`https://myapp-xxff.api.codehooks.io/dev/user`
+
+Or if you run the application locally use,
+
+`http://localhost/dev/user`
+
+## Examples
+
+### Insert a new `user` to the database
+
+POST a new user using curl.
+
+```bash
+curl -X POST \
+  'http://localhost:3000/dev/user' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "name": "Ally",
+  "email": "ally@example.com"
+}'
+```
+
+### Validate data against a Yup data schema
+
+Check that the data schema validates correctly by sending an invalid email address.
+
+```bash
+curl -X POST \
+  'http://localhost:3000/dev/user' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "name": "Sally",
+  "email": "sally.example.com"
+}'
+```
+
+Validation error shows that Yup works.
+
+```bash
+400 Bad Request
+
+{
+  "value": {
+    "active": true,
+    "email": "sally.example.com",
+    "name": "Sally"
+  },
+  "path": "email",
+  "type": "email",
+  "errors": [
+    "email must be a valid email"
+  ],
+  ... # chopped error message
+}
+```
+
+### Run a query agains the database
+
+```bash
+curl -X GET \
+  'http://localhost:3000/dev/user?name=Ally' \
+  --header 'Content-Type: application/json' 
+```
+
+Example output.
+
+```json
+[
+  {
+    "_id": "63fb97825f624f479034eb08",
+    "active": true,
+    "email": "ally@example.com",
+    "name": "Ally"
+  }
+]
+```
+
+### Update a record in the database
+
+```bash
+curl -X PATCH \
+  'http://localhost:3000/dev/user/63fb97825f624f479034eb08' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "name": "Ally Mc. Beal"
+}'
+```
 
 ## Database event hooks middleware
 
-Events can be called before and after a database operation.
+To provide additional CRUD logic, events are triggered before and after a database operation.
 
 ```js
 hooks.before<VERB>(<COLLECTION>, callbackFunction)
@@ -82,7 +205,7 @@ hooks.before<VERB>(<COLLECTION>, callbackFunction)
 hooks.after<VERB>(<COLLECTION>, callbackFunction)
 ```
 
-Example event hooks is shown below.
+Example event hooks is shown in the code example below.
 
 ```js
 ...
@@ -94,7 +217,7 @@ const hooks = await crudlify(app, { user: userSchemaJSON }, options);
 
 hooks
 .beforePOST('user', (data) => {
-    console.log("Pre insert user before saving", data)
+    console.log("User data before saving", data)
 
     // abort operation with a throw, cases 404 status code
     // E.g. throw new Error(`BAAD post for ${data}`)
@@ -103,32 +226,39 @@ hooks
     data.foo = 'Was here!'
 })
 .afterPOST('user', (data) => {
-    console.log("Post insert user after saved to the database", data)
+    console.log("User data after saved to the database", data)
 })
 ...
 ```
 
 ## Options
 
-* Schema: yup or json.schema. Default yup.
-* Format: Standard JSON array or ?
-* Query: URL query to mongo (q2m) or JSON mongo. Default q2m
+To use [json-schema](https://json-schema.org/) instead of yup initialize crudlify with the `schema` option.
 
-Crudlify can be used in many scenarios.
+```js
+crudlify(app, {user: userSchemaJSON}, {schema: "json-schema"})
+```
 
-## App servers
-* Express
-* Next.js (coming soon)
 
-## Databases
-* mongoDB
-* Codehooks.io
+## Quick start
 
-## Data schemas
-* Yup
-* JSON-schema
+For a quick start you can create a app without any schema or validation. This effectively gives you a CRUD REST API for any collection. The example below shows an example.
 
-## JSON data formats
-* React admin
-* Appgyver
-* MOI apps
+```js
+// index.js
+import app from 'codehooks-js';
+import crudlify from 'codehooks-crudlify';
+
+// Make REST API CRUD operations for any collection no schema
+crudlify(app)
+
+export default app.init(); // export app to serverless runtime
+```
+
+Deploy with `coho deploy` or to Express locally like shown in the examples above.
+
+## Documentation
+* [Database API](https://codehooks.io/docs/nosql-database-api)
+* [App events](https://codehooks.io/docs/appeventapi)
+* [Queue workers](https://codehooks.io/docs/queuehooks)
+* [CRON job workers](https://codehooks.io/docs/jobhooks)
