@@ -111,7 +111,7 @@ For example:
 
 Or if you run the application locally use,
 
-`http://localhost/dev/user`
+`http://localhost:3000/dev/user`
 
 ## Examples
 
@@ -242,7 +242,7 @@ crudlify(app, {user: userSchemaJSON}, {schema: "json-schema"})
 
 ## Quick start
 
-For a quick start you can create a app without any schema or validation. This effectively gives you a CRUD REST API for any collection. The example below shows an example.
+For a quick start you can create a app without any schema or validation. This effectively gives you a CRUD REST API for any collection. The example below shows an bare bone example backend application.
 
 ```js
 // index.js
