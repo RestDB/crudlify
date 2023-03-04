@@ -105,15 +105,19 @@ async function createFunc(req, res) {
                     res.status(400).json(err.message);
                 });
         } else {
-            // insert with collection name but no schema            
+            // insert with collection name but no schema  
+            await _eventHooks.fireBefore(collection, 'POST', document);          
             const result = await conn.insertOne(collection, document);
+            await _eventHooks.fireAfter(collection, 'POST', result);
             res.json(result);
         }
     } else {
         if (Object.keys(_schema).length === 0) {
             debug("data", collection, document)
             // insert any collection name no schema definitions, anything goes
+            await _eventHooks.fireBefore(collection, 'POST', document);          
             const result = await conn.insertOne(collection, document);
+            await _eventHooks.fireAfter(collection, 'POST', result);
             res.json(result);
         } else {
             return res.status(400).json({ "error": `Collection not found: ${collection}` });
@@ -131,6 +135,7 @@ async function readManyFunc(req, res) {
     }
 
     const mongoQuery = _query(req.query, req.headers);    
+    debug('Mongo query', mongoQuery)
     
     const conn = await Datastore.open();
     

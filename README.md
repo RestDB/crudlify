@@ -201,6 +201,36 @@ curl -X PATCH \
 }'
 ```
 
+## Querying the database
+
+You can query the database REST API in two different ways.
+
+**Simple** to use and quick queries with the URL query language:
+
+```url
+http://localhost:3000/dev/user?name=jane&age>23&limit=2&offset=5&sort=email&fields=name,age
+```
+
+Which actually produces this query object:
+
+```js
+{ name: 'Jane', age: { '$gt': 23 } }, {
+  fields: { name: 1, age: 1 },
+  sort: { email: 1 },
+  skip: 5,
+  limit: 2,
+  projection: { name: 1, age: 1 }
+}
+```
+
+For **advanced** use, and programmatic approact, pass inn the full JSON query and hints as URL objects:
+
+```url
+http://localhost:3000/dev/user?q={"name": "Jane", "age": {"$gt": 23}}&h={"fields": { "name": 1, "age": 1 },"sort": {"email": 1 },"skip": 5,"limit": 2,"projection": { "name": 1, "age": 1 }}
+```
+The last option would probably use `JSON.stringify(query)` etc. to produce a valid query in the URL.
+
+
 ## Database event hooks middleware
 
 To provide additional CRUD logic, events are triggered before and after a database operation.
