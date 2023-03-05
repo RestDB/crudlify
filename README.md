@@ -77,7 +77,7 @@ const options = {
 }
 
 // Important, make codehooks use express and MongoDB
-coho.app.useExpress(app, options);
+coho.useExpress(app, options);
 
 // Start the server
 app.listen(3000, () => {
