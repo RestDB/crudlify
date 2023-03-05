@@ -6,7 +6,7 @@ Easy database REST API CRUD automation for Node.js. Use this open source package
 
 Create a new directory for your project. Then initialize with npm and JavaScript ES6.
 
-`npm init es5`
+`npm init es6`
 
 Install dependent packages.
 
