@@ -4,7 +4,7 @@ Easy database REST API CRUD automation for Node.js. Use this open source package
 
 ## Data and validation schemas
 
-Codehooks-crudlify supports the popular data and validation schemas:
+Codehooks-crudlify supports these popular data and validation schemas:
 * [Yup](https://www.npmjs.com/package/yup) - Dead simple Object schema validation
 * [Zod](https://www.npmjs.com/package/zod) - TypeScript-first schema validation with static type inference
 * [JSON.schema](https://www.npmjs.com/package/ajv) - Standard declarative language that allows you to annotate and validate JSON documents
