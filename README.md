@@ -2,6 +2,13 @@
 
 Easy database REST API CRUD automation for Node.js. Use this open source package for easy creation of REST APIs and persistent storage for backend applications. This package requires use of [codehooks-js](https://www.npmjs.com/package/codehooks-js) together with a codehooks.io backend or using Express/MongoDB with the open source [codehooks-mongodb](https://www.npmjs.com/package/codehooks-mongodb) library.
 
+## Data and validation schemas
+
+Codehooks-crudlify supports the popular data and validation schemas:
+* [Yup](https://www.npmjs.com/package/yup) - Dead simple Object schema validation
+* [Zod](https://www.npmjs.com/package/zod) - TypeScript-first schema validation with static type inference
+* [JSON.schema](https://www.npmjs.com/package/ajv) - Standard declarative language that allows you to annotate and validate JSON documents
+
 ## Install
 
 Create a new directory for your project. Then initialize with npm and JavaScript ES6.
@@ -14,7 +21,7 @@ Install dependent packages.
 
 ## Usage
 
-Create a Node.js Codehooks backend app like the example shown below.
+Create a Node.js Codehooks backend app like the example shown below. This example uses [Yup](https://www.npmjs.com/package/yup) as data schema.
 
 ```js
 // index.js
@@ -34,6 +41,7 @@ const userSchemaYup = object({
 const options = {
     // schema: "yup" (default)
     // schema: "json-schema"
+    // schema: "zod"
 }
 
 // Make REST API CRUD operations for user collection with Yup schema
@@ -48,7 +56,7 @@ Using the [Codehooks CLI](https://www.npmjs.com/package/codehooks) you can deplo
 
 > Tip: Inspect the app output using the `coho logs -f` command. 
 
-Alternatively run and manage it yourself, this is shown in the next section.
+Alternatively run and manage it yourself with Express and mongoDB, this is shown in the next section.
 
 ## Run application with Express server and MongoDB
 

@@ -3,6 +3,7 @@ import { EventHooks } from "./lib/eventhooks.js";
 import {getMongoQuery as _queryQ2M} from "./lib/query/q2m/index.js";
 import {validate as _validateYup, cast as _castYup, prepare as _prepareYup} from "./lib/schema/yup/index.js";
 import {validate as _validateJSON, cast as _castJSON, prepare as _prepareJSON} from "./lib/schema/json-schema/index.js";
+import {validate as _validateZod, cast as _castZod, prepare as _prepareZod }  from "./lib/schema/zod/index.js";
 
 const debug = Debug("crudlify");
 
@@ -54,10 +55,26 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     _validate = _validateYup;
     _cast = _castYup;
     _prepare = _prepareYup;
+    
+    // schema provider other than Yup?
+    for (const property in schema) {
+        console.log(`${property}: ${schema[property].toString()}`);
+        if (schema[property].parse) {
+            options.schema = 'zod';
+        } else if (schema[property].properties) {
+            options.schema = 'json-schema';
+        }
+    }
+    
     if (new String(options.schema).toLowerCase() === 'json-schema') {
         _validate = _validateJSON;
         _cast = _castJSON;
         _prepare = _prepareJSON;
+    }
+    if (new String(options.schema).toLowerCase() === 'zod') {
+        _validate = _validateZod;
+        _cast = _castZod;
+        _prepare = _prepareZod;
     }
     
     // prep schemas
@@ -102,7 +119,7 @@ async function createFunc(req, res) {
                 })
                 .catch(function (err) {
                     console.error(err, document)
-                    res.status(400).json(err.message);
+                    res.status(400).json(err.message || err);
                 });
         } else {
             // insert with collection name but no schema  
