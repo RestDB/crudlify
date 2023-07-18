@@ -152,7 +152,7 @@ async function readManyFunc(req, res) {
     }
 
     const mongoQuery = _query(req.query, req.headers);    
-    debug('Mongo query', mongoQuery)
+    console.debug('Mongo query', mongoQuery)
     
     const conn = await Datastore.open();
     
@@ -160,7 +160,7 @@ async function readManyFunc(req, res) {
 }
 
 async function readOneFunc(req, res) {
-    debug("crudlify read one")
+    console.debug("crudlify read one")
     const { collection, ID } = req.params;
     const conn = await Datastore.open();
     try {
