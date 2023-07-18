@@ -123,19 +123,29 @@ async function createFunc(req, res) {
                 });
         } else {
             // insert with collection name but no schema  
-            await _eventHooks.fireBefore(collection, 'POST', document);          
-            const result = await conn.insertOne(collection, document);
-            await _eventHooks.fireAfter(collection, 'POST', result);
-            res.json(result);
+            try {
+                await _eventHooks.fireBefore(collection, 'POST', document);          
+                const result = await conn.insertOne(collection, document);
+                await _eventHooks.fireAfter(collection, 'POST', result);
+                res.json(result);
+            } catch (ex) {
+                console.error(ex);
+                res.status(400).send(ex);
+            }
         }
     } else {
         if (Object.keys(_schema).length === 0) {
             debug("data", collection, document)
             // insert any collection name no schema definitions, anything goes
-            await _eventHooks.fireBefore(collection, 'POST', document);          
-            const result = await conn.insertOne(collection, document);
-            await _eventHooks.fireAfter(collection, 'POST', result);
-            res.json(result);
+            try {
+                await _eventHooks.fireBefore(collection, 'POST', document);          
+                const result = await conn.insertOne(collection, document);
+                await _eventHooks.fireAfter(collection, 'POST', result);
+                res.json(result);
+            } catch (ex) {
+                console.error(ex);
+                res.status(400).send(ex);
+            }
         } else {
             return res.status(400).json({ "error": `Collection not found: ${collection}` });
         }
