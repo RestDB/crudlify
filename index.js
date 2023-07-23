@@ -5,9 +5,6 @@ import {validate as _validateYup, cast as _castYup, prepare as _prepareYup} from
 import {validate as _validateJSON, cast as _castJSON, prepare as _prepareJSON} from "./lib/schema/json-schema/index.js";
 import {validate as _validateZod, cast as _castZod, prepare as _prepareZod }  from "./lib/schema/zod/index.js";
 
-const debug = Debug("crudlify");
-
-
 // module variables
 let Datastore = null;
 let _schema = {};
@@ -34,24 +31,24 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
         Datastore = DB;
     } catch (error) {
         if (error instanceof ReferenceError) {
-            debug("Standalone mode:", error.message)
+            console.debug("Standalone mode:", error.message)
         }
     }
     try {
         app.addListener((updatedApp) => {
             Datastore = updatedApp.getDatastore();
-            debug('Updated app Datastore', Datastore)
+            console.debug('Updated app Datastore', Datastore)
         })
     } catch (error) {
-        debug(error)
+        console.debug(error)
     }
     // load query language
     _query = _queryQ2M;
 
-    debug('Query lang', _query)
+    console.debug('Query lang', _query)
 
     // load schema validators
-    debug('load validators')
+    console.debug('load validators')
     _validate = _validateYup;
     _cast = _castYup;
     _prepare = _prepareYup;
@@ -80,7 +77,7 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     // prep schemas
     _schema = _prepare(_schema);
 
-    debug('Apply routes to app');
+    console.debug('Apply routes to app');
     // App API routes
     app.post('/:collection', createFunc);
     app.get('/:collection', readManyFunc);
@@ -91,7 +88,7 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     app.delete('/:collection/_byquery', deleteManyFunc);
     app.delete('/:collection/:ID', deleteFunc);
     _eventHooks = new EventHooks();
-    debug('Return event hooks');
+    console.debug('Return event hooks');
     return _eventHooks;
 }
 
@@ -111,11 +108,11 @@ async function createFunc(req, res) {
             _validate(_schema[collection], document)
                 .then(async function (value) {
                     document = _cast(_schema[collection], value)
-                    debug('cast', document)
+                    console.debug('cast', document)
                     await _eventHooks.fireBefore(collection, 'POST', document);
                     const result = await conn.insertOne(collection, document);
                     await _eventHooks.fireAfter(collection, 'POST', result);
-                    res.json(result);
+                    res.status(201).json(result);
                 })
                 .catch(function (err) {
                     console.error(err, document)
@@ -127,7 +124,7 @@ async function createFunc(req, res) {
                 await _eventHooks.fireBefore(collection, 'POST', document);          
                 const result = await conn.insertOne(collection, document);
                 await _eventHooks.fireAfter(collection, 'POST', result);
-                res.json(result);
+                res.status(201).json(result);
             } catch (ex) {
                 console.error(ex);
                 res.status(400).send(ex);
@@ -135,13 +132,13 @@ async function createFunc(req, res) {
         }
     } else {
         if (Object.keys(_schema).length === 0) {
-            debug("data", collection, document)
+            console.debug("data", collection, document)
             // insert any collection name no schema definitions, anything goes
             try {
                 await _eventHooks.fireBefore(collection, 'POST', document);          
                 const result = await conn.insertOne(collection, document);
                 await _eventHooks.fireAfter(collection, 'POST', result);
-                res.json(result);
+                res.status(201).json(result);
             } catch (ex) {
                 console.error(ex);
                 res.status(400).send(ex);
@@ -155,18 +152,23 @@ async function createFunc(req, res) {
 
 
 async function readManyFunc(req, res) {
-    
-    const { collection } = req.params;
-    if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
-        return res.status(404).send(`No collection ${collection}`)
-    }
+    try {
+        const { collection } = req.params;
+        if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
+            return res.status(404).send(`No collection ${collection}`)
+        }
 
-    const mongoQuery = _query(req.query, req.headers);    
-    console.debug('Mongo query', mongoQuery)
+        const mongoQuery = _query(req.query, req.headers);    
+        console.debug('Mongo query', mongoQuery)
     
-    const conn = await Datastore.open();
     
-    return (await conn.getMany(collection, mongoQuery)).json(res);
+        const conn = await Datastore.open();
+        
+        return (await conn.getMany(collection, mongoQuery)).json(res);
+    } catch (ex) {
+        console.error(ex.message);
+        res.status(400).send(ex.message);
+    }
 }
 
 async function readOneFunc(req, res) {
@@ -256,7 +258,7 @@ async function deleteFunc(req, res) {
         await _eventHooks.fireBefore(collection, 'DELETE', ID);
         const result = await conn.removeOne(collection, ID, {});
         await _eventHooks.fireAfter(collection, 'DELETE', result);
-        debug('Delete result', result)
+        console.debug('Delete result', result)
         res.json(result);
     } catch (e) {
         res
