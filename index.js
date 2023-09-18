@@ -1,4 +1,3 @@
-import Debug from "debug";
 import { EventHooks } from "./lib/eventhooks.js";
 import {getMongoQuery as _queryQ2M} from "./lib/query/q2m/index.js";
 import {validate as _validateYup, cast as _castYup, prepare as _prepareYup} from "./lib/schema/yup/index.js";
@@ -24,6 +23,7 @@ let _eventHooks = null;
  * @returns {EventHooks} Hooks for REST operations
  */
 export default async function crudlify(app, schema = {}, options = { schema: "yup", query: "q2m" }) {
+    console.log('Init crudlify', schema, options)
     _schema = schema;
     _opt = options;
     try {
@@ -57,25 +57,25 @@ export default async function crudlify(app, schema = {}, options = { schema: "yu
     for (const property in schema) {
         console.log(`${property}: ${schema[property].toString()}`);
         if (schema[property].parse) {
-            options.schema = 'zod';
+            _opt.schema = 'zod';
         } else if (schema[property].properties) {
-            options.schema = 'json-schema';
+            _opt.schema = 'json-schema';
         }
     }
     
-    if (new String(options.schema).toLowerCase() === 'json-schema') {
+    if (new String(_opt.schema).toLowerCase() === 'json-schema') {
         _validate = _validateJSON;
         _cast = _castJSON;
         _prepare = _prepareJSON;
     }
-    if (new String(options.schema).toLowerCase() === 'zod') {
+    if (new String(_opt.schema).toLowerCase() === 'zod') {
         _validate = _validateZod;
         _cast = _castZod;
         _prepare = _prepareZod;
     }
     
     // prep schemas
-    _schema = _prepare(_schema);
+    _schema = _prepare(_schema, _opt);
 
     console.debug('Apply routes to app');
     // App API routes
@@ -105,7 +105,7 @@ async function createFunc(req, res) {
     if (_schema[collection] !== undefined) {
         
         if (_schema[collection] !== null) {
-            _validate(_schema[collection], document)
+            _validate(_schema[collection], document, _opt)
                 .then(async function (value) {
                     document = _cast(_schema[collection], value)
                     console.debug('cast', document)
@@ -194,13 +194,22 @@ async function updateFunc(req, res) {
     try {
         if (Object.keys(_schema).length > 0 && _schema[collection] === undefined) {
             return res.status(404).send(`No collection ${collection}`)
-        }
+        }        
         const document = req.body;
-        const conn = await Datastore.open();
-        await _eventHooks.fireBefore(collection, 'PUT', document);
-        const result = await conn.replaceOne(collection, ID, document, {});
-        await _eventHooks.fireAfter(collection, 'PUT', result);
-        res.json(result);
+        delete document._id; // avoid schema validation error
+        _validate(_schema[collection], document, _opt)
+            .then(async function (value) {
+                document._id = ID; // put back id that was removed for validation
+                const conn = await Datastore.open();
+                await _eventHooks.fireBefore(collection, 'PUT', document);
+                const result = await conn.replaceOne(collection, ID, document, {});
+                await _eventHooks.fireAfter(collection, 'PUT', result);
+                res.json(result);
+            })
+            .catch(function (err) {
+                console.error(err, document)
+                res.status(400).json(err.message || err);
+            });
     } catch (e) {
         res
             .status(404) // not found
