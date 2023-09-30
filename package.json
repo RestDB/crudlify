@@ -1,6 +1,6 @@
 {
   "name": "codehooks-crudlify",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Database CRUD automation for Node.js",
   "main": "index.js",
   "type": "module",
@@ -41,6 +41,5 @@
     "dev": "",
     "test": ""
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
